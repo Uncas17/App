@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fase de Entrenamiento</title>
+    <link rel="stylesheet" href="../css/fasestyle.css"> <!-- Ajusta el enlace a la hoja de estilos -->
+</head>
+<body>
+    <h1>Añadir Ejercicios a la Fase</h1>
+
+    <div class="fase-container">
+        <!-- Contenedor para los filtros en la columna izquierda -->
+        <div class="filters-container">
+            <h3>Filtros</h3>
+            <table id="filtersTable" class="filters-vertical">
+                <tbody id="filters">
+                    <!-- Los filtros se generarán dinámicamente con JavaScript -->
+                </tbody>
+            </table>
+            <!-- Botón para aplicar filtros -->
+            <button id="applyFilters" class="button">Aplicar Filtros</button>
+        </div>
+
+        <!-- Contenedor principal de la derecha: para ejercicios añadidos y tabla de resultados -->
+        <div class="content-container">
+            <!-- Botón para guardar y volver a la página de entrenamiento -->
+            <button id="saveAndBackButton" class="button back-button">Guardar y Volver</button>
+            
+            <!-- Ejercicios añadidos a la fase -->
+            <div id="addedExercisesContainer" class="added-exercises">
+                <h3>Ejercicios Añadidos</h3>
+                <ul id="addedExercisesList">
+                    <!-- Los ejercicios añadidos se mostrarán aquí dinámicamente -->
+                </ul>
+            </div>
+
+            <!-- Tabla para mostrar los resultados de búsqueda -->
+            <div class="results-container">
+                <h3>Resultados de Búsqueda</h3>
+                <div id="resultsCount" class="results-count">Ejercicios encontrados: 0</div>
+                <table id="resultsTable" class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre del Ejercicio</th>
+                            <th>Grupo Muscular</th>
+                            <th>Video</th> <!-- Nueva columna para el video -->
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Los resultados se insertarán dinámicamente aquí -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/fase.js"></script> <!-- Archivo JavaScript para la lógica -->
+</body>
+</html>
