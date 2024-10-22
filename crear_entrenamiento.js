@@ -2,24 +2,34 @@ document.addEventListener('DOMContentLoaded', function () {
     let dias = [];
     const isReturningFromPhase = localStorage.getItem('returningFromPhase') === 'true';
 
+    // Limpiar localStorage si estamos entrando desde menuroot.html
     if (!isReturningFromPhase) {
         localStorage.removeItem('dias');
         localStorage.removeItem('nombreEntrenamiento');
         localStorage.removeItem('descripcionEntrenamiento');
     }
 
+    // Cargar nombre y descripción del entrenamiento desde localStorage si existen
     const nombreEntrenamiento = localStorage.getItem('nombreEntrenamiento') || '';
     const descripcionEntrenamiento = localStorage.getItem('descripcionEntrenamiento') || '';
 
     document.getElementById('nombreEntrenamiento').value = nombreEntrenamiento;
     document.getElementById('descripcionEntrenamiento').value = descripcionEntrenamiento;
 
+    // Cargar días desde localStorage si ya existen
     if (localStorage.getItem('dias')) {
         dias = JSON.parse(localStorage.getItem('dias'));
+        dias.forEach(dia => {
+            if (!dia.fases) {
+                dia.fases = [];  // Asegúrate de que cada día tenga un array de fases
+            }
+        });
     }
 
+    // Renderizar los días y fases en la página
     renderDias();
 
+    // Guardar título y descripción cuando se modifiquen
     document.getElementById('nombreEntrenamiento').addEventListener('input', function () {
         localStorage.setItem('nombreEntrenamiento', this.value);
     });
@@ -28,34 +38,46 @@ document.addEventListener('DOMContentLoaded', function () {
         localStorage.setItem('descripcionEntrenamiento', this.value);
     });
 
+    // Añadir día al presionar el botón
     document.getElementById('addDayButton').addEventListener('click', function () {
         const dayNumber = prompt("Introduce el número del día (1, 2, 3, etc.):");
 
         if (dayNumber) {
+            // Crear nuevo día
             const newDay = {
                 id: dias.length + 1,
                 dia: `Día ${dayNumber}`,
-                fases: []
+                fases: []  // Inicialmente vacío
             };
 
+            // Añadir día al array de días
             dias.push(newDay);
             localStorage.setItem('dias', JSON.stringify(dias));
+
+            // Renderizar los días nuevamente
             renderDias();
         }
     });
 
+    // Función para renderizar los días y fases en el DOM
     function renderDias() {
         const diasContainer = document.getElementById('diasContainer');
-        diasContainer.innerHTML = '';
+        diasContainer.innerHTML = ''; // Limpiar el contenedor
 
         dias.forEach((dia, index) => {
+            if (!dia.fases) {
+                dia.fases = [];
+            }
+            // Crear div para el día
             const dayDiv = document.createElement('div');
             dayDiv.classList.add('day-item');
 
+            // Mostrar el nombre del día
             const dayTitle = document.createElement('h3');
             dayTitle.textContent = `${dia.dia}`;
             dayDiv.appendChild(dayTitle);
 
+            // Botón para añadir fase dentro de este día
             const addPhaseButton = document.createElement('button');
             addPhaseButton.textContent = 'Añadir Fase';
             addPhaseButton.classList.add('button');
@@ -66,16 +88,20 @@ document.addEventListener('DOMContentLoaded', function () {
                     const newPhase = {
                         id: dia.fases.length + 1,
                         nombre: phaseName,
-                        ejercicios: []
+                        ejercicios: []  // Inicialmente vacío
                     };
 
+                    // Añadir fase al día específico
                     dia.fases.push(newPhase);
                     localStorage.setItem('dias', JSON.stringify(dias));
+
+                    // Renderizar los días nuevamente
                     renderDias();
                 }
             };
             dayDiv.appendChild(addPhaseButton);
 
+            // Renderizar las fases del día
             dia.fases.forEach((fase, phaseIndex) => {
                 const phaseDiv = document.createElement('div');
                 phaseDiv.classList.add('phase-item');
@@ -84,6 +110,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 phaseTitle.textContent = `Fase ${phaseIndex + 1}: ${fase.nombre}`;
                 phaseDiv.appendChild(phaseTitle);
 
+                // Mostrar resumen de ejercicios de la fase
                 const addedExercises = JSON.parse(localStorage.getItem(`fase_${dia.id}_${fase.id}_ejercicios`)) || [];
                 if (addedExercises.length > 0) {
                     const exerciseSummary = document.createElement('ul');
@@ -95,43 +122,47 @@ document.addEventListener('DOMContentLoaded', function () {
                     phaseDiv.appendChild(exerciseSummary);
                 }
 
+                // Botón para añadir ejercicios
                 const addExerciseButton = document.createElement('button');
                 addExerciseButton.textContent = 'Añadir Ejercicio';
                 addExerciseButton.classList.add('button');
                 addExerciseButton.onclick = function () {
-                    localStorage.setItem('returningFromPhase', 'true');
+                    localStorage.setItem('returningFromPhase', 'true'); // Marcar que estamos volviendo de una fase
                     window.location.href = `fase.html?diaId=${dia.id}&faseId=${fase.id}`;
                 };
                 phaseDiv.appendChild(addExerciseButton);
 
+                // Botón para eliminar fase
                 const deletePhaseButton = document.createElement('button');
                 deletePhaseButton.textContent = 'Eliminar Fase';
                 deletePhaseButton.classList.add('button', 'delete-button');
                 deletePhaseButton.onclick = function () {
                     dia.fases = dia.fases.filter(f => f.id !== fase.id);
                     localStorage.setItem('dias', JSON.stringify(dias));
-                    localStorage.removeItem(`fase_${dia.id}_${fase.id}_ejercicios`);
-                    renderDias();
+                    localStorage.removeItem(`fase_${dia.id}_${fase.id}_ejercicios`);  // Eliminar los ejercicios asociados
+                    renderDias();  // Volver a renderizar
                 };
                 phaseDiv.appendChild(deletePhaseButton);
 
-                dayDiv.appendChild(phaseDiv);
+                dayDiv.appendChild(phaseDiv); // Añadir fase al día
             });
 
+            // Botón para eliminar día
             const deleteDayButton = document.createElement('button');
             deleteDayButton.textContent = 'Eliminar Día';
             deleteDayButton.classList.add('button', 'delete-button');
             deleteDayButton.onclick = function () {
                 dias = dias.filter(d => d.id !== dia.id);
                 localStorage.setItem('dias', JSON.stringify(dias));
-                renderDias();
+                renderDias();  // Volver a renderizar
             };
             dayDiv.appendChild(deleteDayButton);
 
-            diasContainer.appendChild(dayDiv);
+            diasContainer.appendChild(dayDiv); // Añadir día al contenedor
         });
     }
 
+    // Guardar el entrenamiento completo
     document.getElementById('saveEntrenamientoButton').addEventListener('click', function () {
         const nombreEntrenamiento = document.getElementById('nombreEntrenamiento').value;
         const descripcionEntrenamiento = document.getElementById('descripcionEntrenamiento').value;
@@ -149,6 +180,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }))
             };
 
+            // Enviar entrenamiento al servidor
             fetch('../php/guardar_entrenamiento.php', {
                 method: 'POST',
                 headers: {
@@ -156,14 +188,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 },
                 body: JSON.stringify(entrenamiento)
             })
-                .then(response => response.json())
+                .then(response => response.text()) // Cambiado a .text() temporalmente para depurar
                 .then(data => {
-                    if (data.success) {
-                        alert('Entrenamiento guardado con éxito');
-                        localStorage.clear();
-                        window.location.href = 'menuroot.html';
-                    } else {
-                        alert('Error al guardar el entrenamiento: ' + data.message);
+                    console.log("Raw response data:", data); // Ver la respuesta exacta
+                    try {
+                        const jsonData = JSON.parse(data); // Intenta convertir en JSON
+                        if (jsonData.success) {
+                            alert('Entrenamiento guardado con éxito');
+                            localStorage.clear();  // Limpiar todo el localStorage
+                            window.location.href = 'menuroot.html'; // Redirigir tras guardar
+                        } else {
+                            console.error(jsonData);
+                            alert('Error al guardar el entrenamiento');
+                        }
+                    } catch (error) {
+                        console.error('Error parsing JSON:', error);
+                        alert('Error en la respuesta del servidor');
                     }
                 })
                 .catch(error => {
@@ -174,19 +214,20 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // Botón para volver al menú principal
     document.getElementById('backButton').addEventListener('click', function () {
-        localStorage.clear();
-        window.location.href = 'menuroot.html';
+        localStorage.clear();  // Limpiar el localStorage
+        window.location.href = 'menuroot.html'; // Redirigir al menú principal
     });
 
-    // Nueva función para clonar entrenamiento
-        window.clonarEntrenamiento = function() {
+    // Función para clonar entrenamiento y rellenar el formulario
+    window.clonarEntrenamiento = function() {
         const entrenamientoId = document.getElementById('entrenamientoLista').value;
         if (!entrenamientoId) {
             alert('Por favor selecciona un entrenamiento para clonar');
             return;
         }
-    
+
         fetch('../php/clonar_entrenamiento.php', {
             method: 'POST',
             headers: {
@@ -198,13 +239,30 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(data => {
             if (data.success) {
                 // Rellenar el formulario con los datos obtenidos
-                document.getElementById('nombre').value = data.entrenamiento.nombre + ' (Copia)';
-                document.getElementById('descripcion').value = data.entrenamiento.descripcion;
-                document.getElementById('estado').value = data.entrenamiento.estado;
-                document.getElementById('comentarios').value = data.entrenamiento.comentarios;
-    
-                // Aquí puedes añadir lógica para rellenar los días, fases y detalles en el formulario
-                // Esto dependerá de la estructura de tu formulario en crear_entrenamiento.html
+                document.getElementById('nombreEntrenamiento').value = data.entrenamiento.nombre + ' (Copia)';
+                document.getElementById('descripcionEntrenamiento').value = data.entrenamiento.descripcion;
+
+                // Guardar los datos en localStorage
+                localStorage.setItem('nombreEntrenamiento', data.entrenamiento.nombre + ' (Copia)');
+                localStorage.setItem('descripcionEntrenamiento', data.entrenamiento.descripcion);
+
+                // Rellenar los días y fases
+                dias = data.dias;
+                dias.forEach(dia => {
+                    if (!dia.fases) {
+                        dia.fases = [];
+                    }
+                });
+                localStorage.setItem('dias', JSON.stringify(dias));
+                renderDias();
+
+                // Rellenar los ejercicios de cada fase
+                for (const dia of data.dias) {
+                    for (const fase of data.fases[dia.dia]) {
+                        const ejercicios = data.detalles[fase.id] || [];
+                        localStorage.setItem(`fase_${dia.id}_${fase.id}_ejercicios`, JSON.stringify(ejercicios));
+                    }
+                }
             } else {
                 alert('Error al clonar el entrenamiento: ' + data.message);
             }
@@ -214,26 +272,4 @@ document.addEventListener('DOMContentLoaded', function () {
             alert('Error al clonar el entrenamiento');
         });
     }
-
-    // Cargar la lista de entrenamientos existentes
-    function cargarListaEntrenamientos() {
-        fetch('../php/listar_entrenamientos.php')
-            .then(response => response.json())
-            .then(data => {
-                const entrenamientoLista = document.getElementById('entrenamientoLista');
-                entrenamientoLista.innerHTML = '';
-                data.forEach(entrenamiento => {
-                    const option = document.createElement('option');
-                    option.value = entrenamiento.id;
-                    option.textContent = entrenamiento.nombre;
-                    entrenamientoLista.appendChild(option);
-                });
-            })
-            .catch(error => {
-                console.error('Error al cargar la lista de entrenamientos:', error);
-            });
-    }
-
-    // Llamar a la función para cargar la lista de entrenamientos al cargar la página
-    cargarListaEntrenamientos();
 });
