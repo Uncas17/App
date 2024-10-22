@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios</title>
+    <link rel="stylesheet" href="../css/style.css"> <!-- Enlace a la hoja de estilos -->
+</head>
+<body>
+    <!-- Título principal de la página -->
+    <h1>Gestión de Usuarios</h1>
+
+    <!-- Contenedor principal que agrupa los botones y la tabla de resultados -->
+    <div class="main-container centered">
+
+        <!-- Contenedor de botones -->
+        <div class="filters-container"> <!-- Contenedor alineado a la izquierda -->
+            <!-- Botón para añadir usuario -->
+            <button id="addUserButton" class="button-secondary">Añadir Usuario</button>
+            <!-- Botón para volver a la página principal -->
+            <button id="backButton" class="button back-button">Volver</button>
+        </div>
+
+        <!-- Contenedor para la tabla de resultados (centrado) -->
+        <div class="results-container centered">
+            <!-- Tabla para mostrar los resultados de los usuarios -->
+            <table id="resultsTable" class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Acciones</th> <!-- Columna para los botones de modificar y eliminar -->
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Aquí se insertarán los resultados filtrados dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Script para gestionar la carga dinámica de la tabla y los botones -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cargar la lista de usuarios
+            loadUsers();
+
+            // Asignar evento al botón "Añadir Usuario"
+            document.getElementById('addUserButton').addEventListener('click', function() {
+                window.location.href = 'add_user.html';
+            });
+
+            // Asignar evento al botón "Volver"
+            document.getElementById('backButton').addEventListener('click', function() {
+                window.location.href = 'menuroot.html';
+            });
+        });
+
+        // Función para cargar los usuarios y mostrarlos en la tabla
+        function loadUsers() {
+            fetch('../php/listar_usuarios.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && Array.isArray(data.usuarios)) {
+                        displayUsers(data.usuarios);
+                    } else {
+                        console.error('Error: ', data.message || 'Los datos recibidos no son correctos.');
+                    }
+                })
+                .catch(error => console.error('Error al cargar los usuarios:', error));
+        }
+
+        // Función para mostrar los usuarios en la tabla
+        function displayUsers(users) {
+            const tableBody = document.querySelector('#resultsTable tbody');
+            tableBody.innerHTML = ''; // Limpiar la tabla antes de agregar nuevos resultados
+
+            // Recorrer cada usuario y agregarlo a la tabla
+            users.forEach(user => {
+                const tr = document.createElement('tr');
+
+                // Crear celdas para cada columna de usuario
+                ['id_usuario', 'nombre', 'email', 'rol'].forEach(key => {
+                    const td = document.createElement('td');
+                    td.textContent = user[key] || '';
+                    tr.appendChild(td);
+                });
+
+                // Crear la celda para las acciones
+                const actionTd = document.createElement('td');
+
+                // Botón de modificar
+                const modifyButton = document.createElement('button');
+                modifyButton.textContent = 'M';
+                modifyButton.classList.add('button-modify'); // Clase para estilos específicos
+                modifyButton.addEventListener('click', () => {
+                    window.location.href = `modify_user.html?id=${user.id_usuario}`;
+                });
+                actionTd.appendChild(modifyButton);
+
+                // Botón de eliminar
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'X';
+                deleteButton.classList.add('button-delete'); // Clase para estilos específicos
+                deleteButton.addEventListener('click', () => {
+                    if (confirm('¿Estás seguro de que deseas eliminar a este usuario?')) {
+                        deleteUser(user.id_usuario);
+                    }
+                });
+                actionTd.appendChild(deleteButton);
+
+                // Agregar la celda de acciones a la fila
+                tr.appendChild(actionTd);
+
+                // Agregar la fila a la tabla
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // Función para eliminar un usuario
+        function deleteUser(userId) {
+            fetch(`../php/eliminar_usuario.php?id=${userId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Usuario eliminado con éxito.');
+                    loadUsers(); // Recargar la tabla de usuarios
+                } else {
+                    alert('Error al eliminar el usuario.');
+                }
+            })
+            .catch(error => console.error('Error al eliminar el usuario:', error));
+        }
+    </script>
+</body>
+</html>
