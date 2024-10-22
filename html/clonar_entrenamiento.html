@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clonar Entrenamiento</title>
+    <style>
+        .dia, .fase {
+            margin-bottom: 10px;
+        }
+        .button {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Clonar Entrenamiento</h1>
+    <select id="selectEntrenamiento">
+        <!-- Opciones cargadas dinámicamente -->
+    </select>
+    <button id="cloneEntrenamientoButton">Clonar Entrenamiento</button>
+
+    <div>
+        <h2>Entrenamiento Clonado</h2>
+        <form id="entrenamientoForm">
+            <label>Nombre del Entrenamiento:</label>
+            <input type="text" id="nombreEntrenamiento"><br>
+            <label>Descripción:</label>
+            <textarea id="descripcionEntrenamiento"></textarea><br>
+            <div id="diasContainer"></div>
+            <button type="button" onclick="addDia()">Añadir Día</button>
+            <button type="button" onclick="guardarEntrenamiento()">Guardar Entrenamiento</button>
+        </form>
+    </div>
+
+    <script>
+       document.addEventListener('DOMContentLoaded', function () {
+    // Cargar entrenamientos en el desplegable
+    fetch('../php/li_ent.php')
+        .then(response => response.json())
+        .then(data => {
+            const selectEntrenamiento = document.getElementById('selectEntrenamiento');
+            data.entrenamientos.forEach(entrenamiento => {
+                const option = document.createElement('option');
+                option.value = entrenamiento.id;
+                option.textContent = entrenamiento.nombre;
+                selectEntrenamiento.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Error al cargar los entrenamientos:', error));
+
+    // Botón para clonar un entrenamiento
+    document.getElementById('cloneEntrenamientoButton').addEventListener('click', function () {
+        const entrenamientoId = document.getElementById('selectEntrenamiento').value;
+
+        if (entrenamientoId) {
+            fetch(`../php/ob_ent.php?id=${entrenamientoId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('nombreEntrenamiento').value = data.entrenamiento.nombre;
+                        document.getElementById('descripcionEntrenamiento').value = data.entrenamiento.descripcion;
+                        localStorage.setItem('dias', JSON.stringify(data.entrenamiento.dias));
+                        renderDias();
+                    } else {
+                        alert('Error al obtener el entrenamiento');
+                    }
+                })
+                .catch(error => console.error('Error al clonar el entrenamiento:', error));
+        }
+    });
+
+    // Función renderDias
+    function renderDias() {
+        const dias = JSON.parse(localStorage.getItem('dias')) || [];
+        const diasContainer = document.getElementById('diasContainer');
+        diasContainer.innerHTML = '';
+
+        dias.forEach((dia, diaIndex) => {
+            const diaDiv = document.createElement('div');
+            diaDiv.classList.add('dia');
+            diaDiv.innerHTML = `
+                <h3>Día ${diaIndex + 1}: ${dia.dia}</h3>
+                <button onclick="addFase(${diaIndex})" class="button">Añadir Fase</button>
+                <button onclick="deleteDia(${diaIndex})" class="button delete-button">Eliminar Día</button>
+            `;
+
+            dia.fases.forEach((fase, faseIndex) => {
+                const faseDiv = document.createElement('div');
+                faseDiv.classList.add('fase');
+                faseDiv.innerHTML = `
+                    <h4>Fase ${faseIndex + 1}: ${fase.nombre}</h4>
+                    <button onclick="window.location.href='fase.html';" class="button">Añadir Ejercicio</button>
+                    <button onclick="deleteFase(${diaIndex}, ${faseIndex})" class="button delete-button">Eliminar Fase</button>
+                    <ul id="ejerciciosList-${diaIndex}-${faseIndex}"></ul>
+                `;
+
+                const ejerciciosList = faseDiv.querySelector(`#ejerciciosList-${diaIndex}-${faseIndex}`);
+                fase.ejercicios.forEach((ejercicio, ejercicioIndex) => {
+                    const ejercicioItem = document.createElement('li');
+                    ejercicioItem.innerHTML = `
+                        ${ejercicio.nombre_ejercicio || 'Nombre no disponible'} - ${ejercicio.sets || 0} sets de ${ejercicio.repeticiones || 0} reps, descanso ${ejercicio.descanso || 0}s
+                    `;
+                    ejerciciosList.appendChild(ejercicioItem);
+                });
+
+                diaDiv.appendChild(faseDiv);
+            });
+
+            diasContainer.appendChild(diaDiv);
+        });
+    }
+
+    // Función para añadir una nueva fase
+    window.addFase = function(diaIndex) {
+        const dias = JSON.parse(localStorage.getItem('dias')) || [];
+        const nombreFase = prompt('Nombre de la nueva fase:');
+
+        if (nombreFase) {
+            const nuevaFase = {
+                nombre: nombreFase,
+                ejercicios: []
+            };
+            dias[diaIndex].fases.push(nuevaFase);
+            localStorage.setItem('dias', JSON.stringify(dias));
+            renderDias();
+        }
+    };
+
+    // Función para añadir un nuevo ejercicio
+    window.addEjercicio = function(diaIndex, faseIndex) {
+        const dias = JSON.parse(localStorage.getItem('dias')) || [];
+        const nombreEjercicio = prompt('Nombre del ejercicio:');
+        const sets = prompt('Número de sets:');
+        const repeticiones = prompt('Número de repeticiones:');
+        const descanso = prompt('Descanso (en segundos):');
+
+        if (nombreEjercicio && sets && repeticiones && descanso) {
+            const nuevoEjercicio = {
+                nombre_ejercicio: nombreEjercicio,
+                sets: sets,
+                repeticiones: repeticiones,
+                descanso: descanso
+            };
+            dias[diaIndex].fases[faseIndex].ejercicios.push(nuevoEjercicio);
+            localStorage.setItem('dias', JSON.stringify(dias));
+            renderDias();
+        }
+    };
+
+    // Función para eliminar un día
+    window.deleteDia = function(diaIndex) {
+        const dias = JSON.parse(localStorage.getItem('dias')) || [];
+        dias.splice(diaIndex, 1);
+        localStorage.setItem('dias', JSON.stringify(dias));
+        renderDias();
+    };
+
+    // Función para eliminar una fase
+    window.deleteFase = function(diaIndex, faseIndex) {
+        const dias = JSON.parse(localStorage.getItem('dias')) || [];
+        dias[diaIndex].fases.splice(faseIndex, 1);
+        localStorage.setItem('dias', JSON.stringify(dias));
+        renderDias();
+    };
+
+    // Función para eliminar un ejercicio
+    window.deleteEjercicio = function(diaIndex, faseIndex, ejercicioIndex) {
+        const dias = JSON.parse(localStorage.getItem('dias')) || [];
+        dias[diaIndex].fases[faseIndex].ejercicios.splice(ejercicioIndex, 1);
+        localStorage.setItem('dias', JSON.stringify(dias));
+        renderDias();
+    };
+
+    // Llamar a renderDias() después de obtener los datos del entrenamiento clonado
+});
+    </script>
+</body>
+</html>
